@@ -40,7 +40,7 @@ py -m pip install windows-curses
 Clone the repository with Git:
 
 ```powershell
-git clone https://github.com/YOUR-USERNAME/YOUR-REPOSITORY.git
+git clone https://github.com/raider-500/TUI-Snake/edit/main/README.md
 ```
 
 Then enter the project folder:
