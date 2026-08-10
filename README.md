@@ -1,4 +1,5 @@
 # TUI Snake
+# PS: Your colors may look different based on the color scheme! im using catppuccin mocha in the picture.
 <img width="1209" height="640" alt="image" src="https://github.com/user-attachments/assets/076f8722-bb35-4dc1-84a4-b531ea0fc6d4" />
 A simple Snake game for the terminal, written in Python using `curses`.
 
