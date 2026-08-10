@@ -1,7 +1,8 @@
 # TUI Snake
-# PS: Your colors may look different based on the color scheme! im using catppuccin mocha in the picture.
-<img width="1209" height="640" alt="image" src="https://github.com/user-attachments/assets/076f8722-bb35-4dc1-84a4-b531ea0fc6d4" />
+<img width="1209" height="640" alt="image" src="https://github.com/user-attachments/assets/d89bc073-812d-4652-be56-e56bf2b76d9b" />
 A simple Snake game for the terminal, written in Python using `curses`.
+
+> **Note:** Colors may look different depending on your terminal's color scheme. The screenshots use **Catppuccin Mocha**.
 
 ## Features
 
@@ -18,26 +19,56 @@ A simple Snake game for the terminal, written in Python using `curses`.
 * Python 3
 * `windows-curses` on Windows
 
-Install `windows-curses`:
+## Installation
+
+### 1. Install Python
+
+Download and install Python 3 from [python.org](https://www.python.org/downloads/).
+
+During installation, make sure **"Add Python to PATH"** is enabled.
+
+### 2. Install `windows-curses`
+
+Open PowerShell and run:
 
 ```powershell
 py -m pip install windows-curses
 ```
 
+### 3. Download the repository
+
+Clone the repository with Git:
+
+```powershell
+git clone https://github.com/YOUR-USERNAME/YOUR-REPOSITORY.git
+```
+
+Then enter the project folder:
+
+```powershell
+cd YOUR-REPOSITORY
+```
+
+Alternatively, download the repository as a ZIP from GitHub and extract it.
+
 ## Running
+
+Open PowerShell in the folder containing `TUI-Snake.py` and run:
 
 ```powershell
 py TUI-Snake.py
 ```
 
+Make sure your terminal window is large enough for the game board.
+
 ## Controls
 
-| Key               | Action  |
-| ----------------- | ------- |
-| WASD / Arrow Keys | Move    |
-| ESC               | Pause   |
-| R                 | Restart |
-| Q                 | Quit    |
+| Key               | Action                  |
+| ----------------- | ----------------------- |
+| WASD / Arrow Keys | Move                    |
+| `ESC`             | Pause / Resume          |
+| `R`               | Restart after game over |
+| `Q`               | Quit after game over    |
 
 ## Built With
 
