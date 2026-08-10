@@ -27,7 +27,7 @@ py -m pip install windows-curses
 ## Running
 
 ```powershell
-py snake.py
+py TUI-Snake.py
 ```
 
 ## Controls
