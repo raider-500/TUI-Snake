@@ -12,19 +12,13 @@ def draw_grid(stdscr, height, width, grid_color):
 def draw_snake(stdscr, snake, snake_color):
     for i, (y, x) in enumerate(snake):
         if i == 0:
-            # Thick blue head
             stdscr.addstr(
-                y,
-                x,
-                "██",
+                y, x, "██",
                 snake_color | curses.A_BOLD
             )
         else:
-            # Thick blue body
             stdscr.addstr(
-                y,
-                x,
-                "██",
+                y, x, "██",
                 snake_color
             )
 
@@ -32,25 +26,21 @@ def draw_snake(stdscr, snake, snake_color):
 def draw_apples(stdscr, apples, apple_color):
     for y, x in apples:
         stdscr.addch(
-            y,
-            x,
-            "O",
+            y, x, "O",
             apple_color | curses.A_BOLD | curses.A_REVERSE
         )
 
 
-def play_game(stdscr):
+def play_game(stdscr, high_score):
     height, width = stdscr.getmaxyx()
 
-    # Make sure the board is wide enough
     if width < 30 or height < 10:
         stdscr.addstr(
-            1,
-            1,
+            1, 1,
             "Terminal too small! Make the window bigger."
         )
         stdscr.getch()
-        return 0
+        return 0, high_score
 
     # =========================
     # COLORS
@@ -67,7 +57,7 @@ def play_game(stdscr):
 
     snake_color = curses.color_pair(1)
     apple_color = curses.color_pair(2)
-    score_color = curses.color_pair(3)
+    text_color = curses.color_pair(3)
     border_color = curses.color_pair(4)
     background_color = curses.color_pair(5)
     grid_color = curses.color_pair(6)
@@ -110,7 +100,7 @@ def play_game(stdscr):
             apples.append(new_apple)
 
     # =========================
-    # INITIAL DRAW
+    # DRAW BOARD
     # =========================
 
     draw_grid(
@@ -125,10 +115,9 @@ def play_game(stdscr):
     stdscr.attroff(border_color)
 
     stdscr.addstr(
-        0,
-        2,
-        f" Score: {score} ",
-        score_color | curses.A_BOLD
+        0, 2,
+        f" Score: {score} | High Score: {high_score} ",
+        text_color | curses.A_BOLD
     )
 
     draw_snake(
@@ -160,7 +149,6 @@ def play_game(stdscr):
         if paused:
 
             stdscr.timeout(-1)
-
             key = stdscr.getch()
 
             if key == 27:
@@ -183,10 +171,9 @@ def play_game(stdscr):
                 stdscr.attroff(border_color)
 
                 stdscr.addstr(
-                    0,
-                    2,
-                    f" Score: {score} ",
-                    score_color | curses.A_BOLD
+                    0, 2,
+                    f" Score: {score} | High Score: {high_score} ",
+                    text_color | curses.A_BOLD
                 )
 
                 draw_snake(
@@ -210,7 +197,6 @@ def play_game(stdscr):
         # =========================
 
         stdscr.timeout(speed)
-
         key = stdscr.getch()
 
         # ESC = PAUSE
@@ -229,11 +215,10 @@ def play_game(stdscr):
                 pause_y,
                 pause_x,
                 message,
-                score_color | curses.A_BOLD
+                text_color | curses.A_BOLD
             )
 
             stdscr.refresh()
-
             continue
 
         # =========================
@@ -301,7 +286,7 @@ def play_game(stdscr):
             head[1] += 1
 
         # =========================
-        # COLLISION
+        # WALL COLLISION
         # =========================
 
         if (
@@ -310,10 +295,14 @@ def play_game(stdscr):
             or head[1] == 0
             or head[1] == width - 1
         ):
-            return score
+            return score, high_score
+
+        # =========================
+        # SELF COLLISION
+        # =========================
 
         if head in snake:
-            return score
+            return score, high_score
 
         # =========================
         # ADD HEAD
@@ -329,9 +318,13 @@ def play_game(stdscr):
 
             score += 1
 
+            # Update high score immediately
+            if score > high_score:
+                high_score = score
+
             apples.remove(head)
 
-            # New apple
+            # Spawn replacement apple
             while True:
 
                 new_apple = [
@@ -354,9 +347,7 @@ def play_game(stdscr):
 
                 for y, x in snake:
                     stdscr.addstr(
-                        y,
-                        x,
-                        "..",
+                        y, x, "..",
                         grid_color
                     )
 
@@ -374,10 +365,8 @@ def play_game(stdscr):
 
         else:
 
-            # Remove tail
             snake.pop()
 
-            # Restore grid
             stdscr.addstr(
                 old_tail[0],
                 old_tail[1],
@@ -386,29 +375,20 @@ def play_game(stdscr):
             )
 
         # =========================
-        # SCORE
+        # SCORE DISPLAY
         # =========================
 
         stdscr.addstr(
-            0,
-            2,
-            f" Score: {score} ",
-            score_color | curses.A_BOLD
+            0, 2,
+            f" Score: {score} | High Score: {high_score} ",
+            text_color | curses.A_BOLD
         )
-
-        # =========================
-        # DRAW SNAKE
-        # =========================
 
         draw_snake(
             stdscr,
             snake,
             snake_color
         )
-
-        # =========================
-        # DRAW APPLES
-        # =========================
 
         draw_apples(
             stdscr,
@@ -423,9 +403,15 @@ def main(stdscr):
 
     curses.curs_set(0)
 
+    # High score exists only while the program is running
+    high_score = 0
+
     while True:
 
-        score = play_game(stdscr)
+        score, high_score = play_game(
+            stdscr,
+            high_score
+        )
 
         # =========================
         # GAME OVER
@@ -437,6 +423,7 @@ def main(stdscr):
 
         message = (
             f" GAME OVER | Score: {score} | "
+            f"High Score: {high_score} | "
             "R = Restart | Q = Quit "
         )
 
@@ -454,6 +441,10 @@ def main(stdscr):
         )
 
         stdscr.refresh()
+
+        # =========================
+        # RESTART / QUIT
+        # =========================
 
         while True:
 
