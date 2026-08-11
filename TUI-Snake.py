@@ -12,198 +12,290 @@ def draw_grid(stdscr, height, width, grid_color):
 def draw_snake(stdscr, snake, snake_color):
     for i, (y, x) in enumerate(snake):
         if i == 0:
-            stdscr.addstr(
-                y, x, "██",
-                snake_color | curses.A_BOLD
-            )
+            if x + 1 < stdscr.getmaxyx()[1]:
+                stdscr.addstr(
+                    y, x, "██",
+                    snake_color | curses.A_BOLD
+                )
         else:
-            stdscr.addstr(
-                y, x, "██",
-                snake_color
-            )
+            if x + 1 < stdscr.getmaxyx()[1]:
+                stdscr.addstr(
+                    y, x, "██",
+                    snake_color
+                )
 
 
 def draw_apples(stdscr, apples, apple_color):
+    height, width = stdscr.getmaxyx()
+
     for y, x in apples:
-        stdscr.addch(
-            y, x, "O",
-            apple_color | curses.A_BOLD | curses.A_REVERSE
-        )
+        if 0 < y < height - 1 and 0 < x < width - 1:
+            stdscr.addch(
+                y, x, "O",
+                apple_color | curses.A_BOLD | curses.A_REVERSE
+            )
 
 
-def draw_pause_menu(stdscr, height, width, score, high_score, text_color):
-    # =========================
-    # PAUSE MENU
-    # =========================
+def draw_pause_menu(
+    stdscr,
+    height,
+    width,
+    score,
+    high_score,
+    text_color
+):
+    # =====================================
+    # UNIVERSAL PAUSE MENU
+    # =====================================
 
-    box_width = 46
-    box_height = 13
+    # Minimum dimensions required for the menu
+    min_box_width = 34
+    min_box_height = 13
 
-    start_y = max(1, (height - box_height) // 2)
-    start_x = max(1, (width - box_width) // 2)
+    # Adapt box width to terminal
+    box_width = min(
+        min_box_width,
+        max(20, width - 4)
+    )
 
-    # Clear the area where the menu will go
+    # Adapt box height to terminal
+    box_height = min(
+        min_box_height,
+        max(7, height - 4)
+    )
+
+    # Center the box
+    start_y = max(
+        1,
+        (height - box_height) // 2
+    )
+
+    start_x = max(
+        1,
+        (width - box_width) // 2
+    )
+
+    # =====================================
+    # CLEAR MENU AREA
+    # =====================================
+
     for y in range(
         start_y,
         min(height - 1, start_y + box_height)
     ):
-        stdscr.addstr(
-            y,
+        try:
+            stdscr.addstr(
+                y,
+                start_x,
+                " " * (box_width - 1),
+                text_color
+            )
+        except curses.error:
+            pass
+
+    # =====================================
+    # BOX DRAWING
+    # =====================================
+
+    try:
+        # Top
+        stdscr.addch(
+            start_y,
             start_x,
-            " " * min(box_width, width - start_x - 1),
-            text_color
+            "╔",
+            text_color | curses.A_BOLD
         )
 
-    # ASCII box
-    top = "╔" + "═" * (box_width - 2) + "╗"
-    bottom = "╚" + "═" * (box_width - 2) + "╝"
+        for x in range(
+            start_x + 1,
+            start_x + box_width - 1
+        ):
+            stdscr.addch(
+                start_y,
+                x,
+                "═",
+                text_color | curses.A_BOLD
+            )
 
-    stdscr.addstr(
-        start_y,
-        start_x,
-        top,
-        text_color | curses.A_BOLD
-    )
+        stdscr.addch(
+            start_y,
+            start_x + box_width - 1,
+            "╗",
+            text_color | curses.A_BOLD
+        )
 
-    # Title
-    title = "║          GAME PAUSED           ║"
+        # Bottom
+        bottom_y = start_y + box_height - 1
 
-    stdscr.addstr(
+        stdscr.addch(
+            bottom_y,
+            start_x,
+            "╚",
+            text_color | curses.A_BOLD
+        )
+
+        for x in range(
+            start_x + 1,
+            start_x + box_width - 1
+        ):
+            stdscr.addch(
+                bottom_y,
+                x,
+                "═",
+                text_color | curses.A_BOLD
+            )
+
+        stdscr.addch(
+            bottom_y,
+            start_x + box_width - 1,
+            "╝",
+            text_color | curses.A_BOLD
+        )
+
+        # Sides
+        for y in range(
+            start_y + 1,
+            bottom_y
+        ):
+            stdscr.addch(
+                y,
+                start_x,
+                "║",
+                text_color
+            )
+
+            stdscr.addch(
+                y,
+                start_x + box_width - 1,
+                "║",
+                text_color
+            )
+
+    except curses.error:
+        pass
+
+    # =====================================
+    # SAFE TEXT FUNCTION
+    # =====================================
+
+    def put_text(row, text, bold=False):
+        if row <= start_y:
+            return
+
+        if row >= start_y + box_height - 1:
+            return
+
+        # Keep text inside box
+        max_length = box_width - 4
+
+        if len(text) > max_length:
+            text = text[:max_length]
+
+        x = start_x + (box_width - len(text)) // 2
+
+        if x < start_x + 1:
+            x = start_x + 1
+
+        try:
+            stdscr.addstr(
+                row,
+                x,
+                text,
+                text_color | (
+                    curses.A_BOLD if bold else 0
+                )
+            )
+        except curses.error:
+            pass
+
+    # =====================================
+    # TITLE
+    # =====================================
+
+    put_text(
         start_y + 1,
-        start_x,
-        title,
-        text_color | curses.A_BOLD
+        "GAME PAUSED",
+        True
     )
 
-    # Snake ASCII art
-    art = [
-        "║       ████                    ║",
-        "║   ████████████                ║",
-        "║ ████      ████                ║",
-        "║ ████  O   ████                ║",
-        "║   ████████████                ║",
-        "║       ████                    ║",
-    ]
+    # =====================================
+    # SNAKE ASCII ART
+    # =====================================
 
-    for i, line in enumerate(art):
-        stdscr.addstr(
-            start_y + 2 + i,
-            start_x,
-            line,
-            text_color
+    if box_height >= 11:
+
+        put_text(
+            start_y + 3,
+            "████"
         )
 
-    # Score
-    score_text = (
-        f"║  Score: {score:<6} "
-        f"High Score: {high_score:<6}║"
-    )
-
-    stdscr.addstr(
-        start_y + 8,
-        start_x,
-        score_text,
-        text_color
-    )
-
-    # Options
-    options = [
-        "║  [ESC] Resume                 ║",
-        "║  [R]   Restart                ║",
-        "║  [Q]   Quit                   ║",
-    ]
-
-    for i, line in enumerate(options):
-        stdscr.addstr(
-            start_y + 9 + i,
-            start_x,
-            line,
-            text_color
+        put_text(
+            start_y + 4,
+            "████████████"
         )
 
-    # Bottom border
-    stdscr.addstr(
-        start_y + box_height - 1,
-        start_x,
-        bottom,
-        text_color | curses.A_BOLD
+        put_text(
+            start_y + 5,
+            "████    ████"
+        )
+
+        put_text(
+            start_y + 6,
+            "████ O  ████"
+        )
+
+    # =====================================
+    # SCORE
+    # =====================================
+
+    score_y = start_y + box_height - 5
+
+    put_text(
+        score_y,
+        f"Score: {score} | High: {high_score}"
     )
+
+    # =====================================
+    # CONTROLS
+    # =====================================
+
+    if box_height >= 10:
+
+        put_text(
+            start_y + box_height - 4,
+            "[ESC] Resume"
+        )
+
+        put_text(
+            start_y + box_height - 3,
+            "[R] Restart"
+        )
+
+        put_text(
+            start_y + box_height - 2,
+            "[Q] Quit"
+        )
 
     stdscr.refresh()
 
 
-def play_game(stdscr, high_score):
-    height, width = stdscr.getmaxyx()
-
-    if width < 50 or height < 16:
-        stdscr.addstr(
-            1,
-            1,
-            "Terminal too small! Make the window bigger."
-        )
-        stdscr.getch()
-        return 0, high_score, "quit"
-
-    # =========================
-    # COLORS
-    # =========================
-
-    curses.start_color()
-
-    curses.init_pair(1, curses.COLOR_BLUE, curses.COLOR_GREEN)
-    curses.init_pair(2, curses.COLOR_RED, curses.COLOR_GREEN)
-    curses.init_pair(3, curses.COLOR_BLACK, curses.COLOR_GREEN)
-    curses.init_pair(4, curses.COLOR_BLACK, curses.COLOR_GREEN)
-    curses.init_pair(5, curses.COLOR_BLACK, curses.COLOR_GREEN)
-    curses.init_pair(6, curses.COLOR_BLACK, curses.COLOR_GREEN)
-
-    snake_color = curses.color_pair(1)
-    apple_color = curses.color_pair(2)
-    text_color = curses.color_pair(3)
-    border_color = curses.color_pair(4)
-    background_color = curses.color_pair(5)
-    grid_color = curses.color_pair(6)
-
-    # =========================
-    # BACKGROUND
-    # =========================
-
-    stdscr.bkgd(" ", background_color)
+def redraw_game(
+    stdscr,
+    height,
+    width,
+    score,
+    high_score,
+    snake,
+    apples,
+    grid_color,
+    border_color,
+    text_color,
+    snake_color,
+    apple_color,
+    background_color
+):
     stdscr.erase()
-
-    # =========================
-    # GAME VARIABLES
-    # =========================
-
-    score = 0
-    paused = False
-
-    snake = [
-        [height // 2, width // 2 - 2],
-        [height // 2, width // 2 - 3],
-        [height // 2, width // 2 - 4]
-    ]
-
-    direction = curses.KEY_RIGHT
-
-    # =========================
-    # CREATE APPLES
-    # =========================
-
-    apples = []
-
-    while len(apples) < 10:
-        new_apple = [
-            random.randint(1, height - 2),
-            random.randint(1, width - 3)
-        ]
-
-        if new_apple not in snake and new_apple not in apples:
-            apples.append(new_apple)
-
-    # =========================
-    # INITIAL DRAW
-    # =========================
+    stdscr.bkgd(" ", background_color)
 
     draw_grid(
         stdscr,
@@ -237,17 +329,142 @@ def play_game(stdscr, high_score):
 
     stdscr.refresh()
 
-    # =========================
+
+def play_game(stdscr, high_score):
+
+    height, width = stdscr.getmaxyx()
+
+    # =====================================
+    # TERMINAL SIZE CHECK
+    # =====================================
+
+    if width < 25 or height < 12:
+
+        stdscr.erase()
+
+        message1 = "Terminal too small."
+        message2 = "Resize the window and try again."
+
+        try:
+            stdscr.addstr(
+                height // 2 - 1,
+                max(0, (width - len(message1)) // 2),
+                message1
+            )
+
+            stdscr.addstr(
+                height // 2,
+                max(0, (width - len(message2)) // 2),
+                message2
+            )
+
+        except curses.error:
+            pass
+
+        stdscr.refresh()
+        stdscr.getch()
+
+        return 0, high_score, "quit"
+
+    # =====================================
+    # COLORS
+    # =====================================
+
+    curses.start_color()
+
+    curses.init_pair(
+        1,
+        curses.COLOR_BLUE,
+        curses.COLOR_GREEN
+    )
+
+    curses.init_pair(
+        2,
+        curses.COLOR_RED,
+        curses.COLOR_GREEN
+    )
+
+    curses.init_pair(
+        3,
+        curses.COLOR_BLACK,
+        curses.COLOR_GREEN
+    )
+
+    snake_color = curses.color_pair(1)
+    apple_color = curses.color_pair(2)
+    text_color = curses.color_pair(3)
+    border_color = curses.color_pair(3)
+    grid_color = curses.color_pair(3)
+    background_color = curses.color_pair(3)
+
+    # =====================================
+    # GAME VARIABLES
+    # =====================================
+
+    score = 0
+    paused = False
+
+    snake = [
+        [height // 2, width // 2 - 2],
+        [height // 2, width // 2 - 3],
+        [height // 2, width // 2 - 4]
+    ]
+
+    direction = curses.KEY_RIGHT
+
+    # =====================================
+    # APPLES
+    # =====================================
+
+    apples = []
+
+    while len(apples) < 10:
+
+        new_apple = [
+            random.randint(1, height - 2),
+            random.randint(1, width - 3)
+        ]
+
+        if (
+            new_apple not in snake
+            and new_apple not in apples
+        ):
+            apples.append(new_apple)
+
+    # =====================================
+    # INITIAL DRAW
+    # =====================================
+
+    redraw_game(
+        stdscr,
+        height,
+        width,
+        score,
+        high_score,
+        snake,
+        apples,
+        grid_color,
+        border_color,
+        text_color,
+        snake_color,
+        apple_color,
+        background_color
+    )
+
+    # =====================================
     # GAME LOOP
-    # =========================
+    # =====================================
 
     while True:
 
-        speed = max(35, 80 - score * 3)
+        speed = max(
+            35,
+            80 - score * 3
+        )
 
-        # =========================
+        # =================================
         # PAUSED
-        # =========================
+        # =================================
 
         if paused:
 
@@ -269,67 +486,65 @@ def play_game(stdscr, high_score):
 
                 paused = False
 
-                stdscr.erase()
-                stdscr.bkgd(" ", background_color)
-
-                draw_grid(
+                redraw_game(
                     stdscr,
                     height,
                     width,
-                    grid_color
-                )
-
-                stdscr.attron(border_color)
-                stdscr.border()
-                stdscr.attroff(border_color)
-
-                stdscr.addstr(
-                    0,
-                    2,
-                    f" Score: {score} | High Score: {high_score} ",
-                    text_color | curses.A_BOLD
-                )
-
-                draw_snake(
-                    stdscr,
+                    score,
+                    high_score,
                     snake,
-                    snake_color
-                )
-
-                draw_apples(
-                    stdscr,
                     apples,
-                    apple_color
+                    grid_color,
+                    border_color,
+                    text_color,
+                    snake_color,
+                    apple_color,
+                    background_color
                 )
-
-                stdscr.refresh()
 
             # Restart
-            elif key in (ord("r"), ord("R")):
-                return 0, high_score, "restart"
+            elif key in (
+                ord("r"),
+                ord("R")
+            ):
+
+                return (
+                    0,
+                    high_score,
+                    "restart"
+                )
 
             # Quit
-            elif key in (ord("q"), ord("Q")):
-                return score, high_score, "quit"
+            elif key in (
+                ord("q"),
+                ord("Q")
+            ):
+
+                return (
+                    score,
+                    high_score,
+                    "quit"
+                )
 
             continue
 
-        # =========================
+        # =================================
         # NORMAL GAME
-        # =========================
+        # =================================
 
         stdscr.timeout(speed)
 
         key = stdscr.getch()
 
-        # ESC = PAUSE
+        # ESC
         if key == 27:
+
             paused = True
             continue
 
-        # =========================
-        # ARROW KEYS
-        # =========================
+        # =================================
+        # MOVEMENT
+        # =================================
 
         if key == curses.KEY_UP:
             if direction != curses.KEY_DOWN:
@@ -347,35 +562,43 @@ def play_game(stdscr, high_score):
             if direction != curses.KEY_LEFT:
                 direction = curses.KEY_RIGHT
 
-        # =========================
-        # WASD
-        # =========================
-
-        elif key in (ord("w"), ord("W")):
+        elif key in (
+            ord("w"),
+            ord("W")
+        ):
             if direction != curses.KEY_DOWN:
                 direction = curses.KEY_UP
 
-        elif key in (ord("s"), ord("S")):
+        elif key in (
+            ord("s"),
+            ord("S")
+        ):
             if direction != curses.KEY_UP:
                 direction = curses.KEY_DOWN
 
-        elif key in (ord("a"), ord("A")):
+        elif key in (
+            ord("a"),
+            ord("A")
+        ):
             if direction != curses.KEY_RIGHT:
                 direction = curses.KEY_LEFT
 
-        elif key in (ord("d"), ord("D")):
+        elif key in (
+            ord("d"),
+            ord("D")
+        ):
             if direction != curses.KEY_LEFT:
                 direction = curses.KEY_RIGHT
 
-        # =========================
+        # =================================
         # OLD TAIL
-        # =========================
+        # =================================
 
         old_tail = snake[-1].copy()
 
-        # =========================
+        # =================================
         # NEW HEAD
-        # =========================
+        # =================================
 
         head = snake[0].copy()
 
@@ -391,30 +614,38 @@ def play_game(stdscr, high_score):
         elif direction == curses.KEY_RIGHT:
             head[1] += 1
 
-        # =========================
+        # =================================
         # COLLISION
-        # =========================
+        # =================================
 
         if (
-            head[0] == 0
-            or head[0] == height - 1
-            or head[1] == 0
+            head[0] <= 0
+            or head[0] >= height - 1
+            or head[1] <= 0
             or head[1] >= width - 2
         ):
-            return score, high_score, "dead"
+            return (
+                score,
+                high_score,
+                "dead"
+            )
 
         if head in snake:
-            return score, high_score, "dead"
+            return (
+                score,
+                high_score,
+                "dead"
+            )
 
-        # =========================
+        # =================================
         # ADD HEAD
-        # =========================
+        # =================================
 
         snake.insert(0, head)
 
-        # =========================
-        # EAT APPLE
-        # =========================
+        # =================================
+        # APPLE
+        # =================================
 
         if head in apples:
 
@@ -428,8 +659,14 @@ def play_game(stdscr, high_score):
             while True:
 
                 new_apple = [
-                    random.randint(1, height - 2),
-                    random.randint(1, width - 3)
+                    random.randint(
+                        1,
+                        height - 2
+                    ),
+                    random.randint(
+                        1,
+                        width - 3
+                    )
                 ]
 
                 if (
@@ -439,19 +676,20 @@ def play_game(stdscr, high_score):
                     apples.append(new_apple)
                     break
 
-            # =========================
-            # GROW BLINK
-            # =========================
-
+            # Blink
             for _ in range(3):
 
                 for y, x in snake:
-                    stdscr.addstr(
-                        y,
-                        x,
-                        "..",
-                        grid_color
-                    )
+
+                    try:
+                        stdscr.addstr(
+                            y,
+                            x,
+                            "..",
+                            grid_color
+                        )
+                    except curses.error:
+                        pass
 
                 stdscr.refresh()
                 time.sleep(0.06)
@@ -469,23 +707,31 @@ def play_game(stdscr, high_score):
 
             snake.pop()
 
+            try:
+                stdscr.addstr(
+                    old_tail[0],
+                    old_tail[1],
+                    "..",
+                    grid_color
+                )
+            except curses.error:
+                pass
+
+        # =================================
+        # SCORE
+        # =================================
+
+        try:
+
             stdscr.addstr(
-                old_tail[0],
-                old_tail[1],
-                "..",
-                grid_color
+                0,
+                2,
+                f" Score: {score} | High Score: {high_score} ",
+                text_color | curses.A_BOLD
             )
 
-        # =========================
-        # SCORE
-        # =========================
-
-        stdscr.addstr(
-            0,
-            2,
-            f" Score: {score} | High Score: {high_score} ",
-            text_color | curses.A_BOLD
-        )
+        except curses.error:
+            pass
 
         draw_snake(
             stdscr,
@@ -506,7 +752,6 @@ def main(stdscr):
 
     curses.curs_set(0)
 
-    # Session-only high score
     high_score = 0
 
     while True:
@@ -516,17 +761,17 @@ def main(stdscr):
             high_score
         )
 
-        # Quit from pause menu
+        # Quit
         if result == "quit":
             return
 
-        # Restart directly
+        # Restart
         if result == "restart":
             continue
 
-        # =========================
+        # =================================
         # GAME OVER
-        # =========================
+        # =================================
 
         stdscr.nodelay(False)
 
@@ -544,12 +789,18 @@ def main(stdscr):
             (width - len(message)) // 2
         )
 
-        stdscr.addstr(
-            y,
-            x,
-            message,
-            curses.color_pair(2) | curses.A_BOLD
-        )
+        try:
+
+            stdscr.addstr(
+                y,
+                x,
+                message,
+                curses.color_pair(2)
+                | curses.A_BOLD
+            )
+
+        except curses.error:
+            pass
 
         stdscr.refresh()
 
@@ -557,10 +808,16 @@ def main(stdscr):
 
             key = stdscr.getch()
 
-            if key in (ord("r"), ord("R")):
+            if key in (
+                ord("r"),
+                ord("R")
+            ):
                 break
 
-            elif key in (ord("q"), ord("Q")):
+            elif key in (
+                ord("q"),
+                ord("Q")
+            ):
                 return
 
 
