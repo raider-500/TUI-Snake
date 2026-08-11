@@ -24,7 +24,6 @@ COLOR_NAMES = [
 # ============================================================
 
 def setup_colors(settings):
-
     curses.start_color()
 
     curses.init_pair(
@@ -53,99 +52,12 @@ def setup_colors(settings):
 
 
 # ============================================================
-# HIGH SCORE SCREEN
-# ============================================================
-
-def new_high_score_screen(stdscr, score, settings):
-
-    height, width = stdscr.getmaxyx()
-
-    snake_color, apple_color, text_color = (
-        setup_colors(settings)
-    )
-
-    # Fill the entire screen with the selected background.
-    stdscr.bkgd(" ", text_color)
-    stdscr.erase()
-
-    art = [
-        "███╗   ██╗███████╗██╗    ██╗",
-        "████╗  ██║██╔════╝██║    ██║",
-        "██╔██╗ ██║█████╗  ██║ █╗ ██║",
-        "██║╚██╗██║██╔══╝  ██║███╗██║",
-        "██║ ╚████║███████╗╚███╔███╔╝",
-        "╚═╝  ╚═══╝╚══════╝ ╚══╝╚══╝ ",
-        "",
-        "██╗  ██╗██╗ ██████╗ ██╗  ██╗",
-        "██║  ██║██║██╔════╝ ██║  ██║",
-        "███████║██║██║      ███████║",
-        "██╔══██║██║██║      ██╔══██║",
-        "██║  ██║██║╚██████╗ ██║  ██║",
-        "╚═╝  ╚═╝╚═╝ ╚═════╝ ╚═╝  ╚═╝",
-    ]
-
-    start_y = max(
-        1,
-        height // 2 - len(art) // 2
-    )
-
-    for i, line in enumerate(art):
-
-        y = start_y + i
-        x = max(
-            0,
-            (width - len(line)) // 2
-        )
-
-        try:
-            stdscr.addstr(
-                y,
-                x,
-                line,
-                text_color | curses.A_BOLD
-            )
-        except curses.error:
-            pass
-
-    score_text = f"NEW HIGH SCORE: {score}"
-
-    try:
-
-        y = min(
-            height - 2,
-            start_y + len(art) + 1
-        )
-
-        x = max(
-            0,
-            (width - len(score_text)) // 2
-        )
-
-        stdscr.addstr(
-            y,
-            x,
-            score_text,
-            text_color | curses.A_BOLD
-        )
-
-    except curses.error:
-        pass
-
-    stdscr.refresh()
-
-    time.sleep(1.5)
-
-
-# ============================================================
 # GRID
 # ============================================================
 
 def draw_grid(stdscr, height, width, text_color):
-
     for y in range(1, height - 1):
-
         for x in range(1, width - 2):
-
             try:
                 stdscr.addch(
                     y,
@@ -162,7 +74,6 @@ def draw_grid(stdscr, height, width, text_color):
 # ============================================================
 
 def draw_snake(stdscr, snake, snake_color):
-
     height, width = stdscr.getmaxyx()
 
     for i, (y, x) in enumerate(snake):
@@ -174,18 +85,14 @@ def draw_snake(stdscr, snake, snake_color):
             continue
 
         try:
-
             if i == 0:
-
                 stdscr.addstr(
                     y,
                     x,
                     "██",
                     snake_color | curses.A_BOLD
                 )
-
             else:
-
                 stdscr.addstr(
                     y,
                     x,
@@ -202,7 +109,6 @@ def draw_snake(stdscr, snake, snake_color):
 # ============================================================
 
 def draw_apples(stdscr, apples, apple_color):
-
     height, width = stdscr.getmaxyx()
 
     for y, x in apples:
@@ -213,7 +119,6 @@ def draw_apples(stdscr, apples, apple_color):
         ):
 
             try:
-
                 stdscr.addstr(
                     y,
                     x,
@@ -235,6 +140,19 @@ def draw_apples(stdscr, apples, apple_color):
 
 
 # ============================================================
+# FORMAT TIMER
+# ============================================================
+
+def format_time(seconds):
+    seconds = int(seconds)
+
+    minutes = seconds // 60
+    seconds = seconds % 60
+
+    return f"{minutes:02d}:{seconds:02d}"
+
+
+# ============================================================
 # GAME DRAW
 # ============================================================
 
@@ -246,14 +164,14 @@ def redraw_game(
     high_score,
     snake,
     apples,
-    settings
+    settings,
+    elapsed_time,
+    show_high_score
 ):
-
     snake_color, apple_color, text_color = (
         setup_colors(settings)
     )
 
-    # Make the entire game background green/selected color.
     stdscr.bkgd(" ", text_color)
     stdscr.erase()
 
@@ -265,16 +183,22 @@ def redraw_game(
     )
 
     try:
-
         stdscr.attron(text_color)
 
         stdscr.border()
 
         stdscr.attroff(text_color)
 
+        timer_text = format_time(elapsed_time)
+
         score_text = (
-            f" Score: {score} | High Score: {high_score} "
+            f" Score: {score} | "
+            f"High Score: {high_score} | "
+            f"Time: {timer_text} "
         )
+
+        if show_high_score:
+            score_text += "| NEW HIGH SCORE! "
 
         stdscr.addstr(
             0,
@@ -306,13 +230,7 @@ def redraw_game(
 # ============================================================
 
 def main_menu(stdscr, settings):
-
     height, width = stdscr.getmaxyx()
-
-    # --------------------------------------------------------
-    # IMPORTANT:
-    # Set the background for the ENTIRE window.
-    # --------------------------------------------------------
 
     curses.init_pair(
         10,
@@ -363,7 +281,6 @@ def main_menu(stdscr, settings):
     subtitle = "Terminal Snake"
 
     try:
-
         stdscr.addstr(
             start_y + 7,
             max(
@@ -373,7 +290,6 @@ def main_menu(stdscr, settings):
             subtitle,
             menu_color
         )
-
     except curses.error:
         pass
 
@@ -394,14 +310,12 @@ def main_menu(stdscr, settings):
         )
 
         try:
-
             stdscr.addstr(
                 button_y + i,
                 x,
                 line,
                 menu_color | curses.A_BOLD
             )
-
         except curses.error:
             pass
 
@@ -411,7 +325,6 @@ def main_menu(stdscr, settings):
     )
 
     try:
-
         stdscr.addstr(
             button_y + 5,
             max(
@@ -421,7 +334,6 @@ def main_menu(stdscr, settings):
             controls,
             menu_color
         )
-
     except curses.error:
         pass
 
@@ -439,20 +351,17 @@ def main_menu(stdscr, settings):
             13,
             ord(" "),
         ):
-
             return "play"
 
         if key in (
             ord("q"),
             ord("Q"),
         ):
-
             return "quit"
 
         if key == curses.KEY_MOUSE:
 
             try:
-
                 _, mouse_x, mouse_y, _, mouse_state = (
                     curses.getmouse()
                 )
@@ -475,7 +384,6 @@ def main_menu(stdscr, settings):
                         <= mouse_x
                         <= button_x + button_width
                     ):
-
                         return "play"
 
             except curses.error:
@@ -487,7 +395,6 @@ def main_menu(stdscr, settings):
 # ============================================================
 
 def options_menu(stdscr, settings):
-
     selected = 0
 
     options = [
@@ -515,7 +422,6 @@ def options_menu(stdscr, settings):
         title = "OPTIONS"
 
         try:
-
             stdscr.addstr(
                 2,
                 max(
@@ -525,7 +431,6 @@ def options_menu(stdscr, settings):
                 title,
                 menu_color | curses.A_BOLD
             )
-
         except curses.error:
             pass
 
@@ -534,7 +439,6 @@ def options_menu(stdscr, settings):
         )
 
         try:
-
             stdscr.addstr(
                 4,
                 max(
@@ -544,7 +448,6 @@ def options_menu(stdscr, settings):
                 description,
                 menu_color
             )
-
         except curses.error:
             pass
 
@@ -557,7 +460,6 @@ def options_menu(stdscr, settings):
             for name_value, color_id in COLOR_NAMES:
 
                 if color_id == settings[setting_key]:
-
                     color_name = name_value
                     break
 
@@ -590,7 +492,6 @@ def options_menu(stdscr, settings):
         back = "ESC / B = Back"
 
         try:
-
             stdscr.addstr(
                 height - 2,
                 max(
@@ -600,7 +501,6 @@ def options_menu(stdscr, settings):
                 back,
                 menu_color
             )
-
         except curses.error:
             pass
 
@@ -695,7 +595,6 @@ def pause_menu(
     high_score,
     settings
 ):
-
     selected = 0
 
     options = [
@@ -906,6 +805,7 @@ def pause_menu(
         ):
 
             if selected == 0:
+
                 return "resume"
 
             elif selected == 1:
@@ -916,9 +816,11 @@ def pause_menu(
                 )
 
             elif selected == 2:
+
                 return "restart"
 
             elif selected == 3:
+
                 return "quit"
 
         elif key == 27:
@@ -936,7 +838,6 @@ def play_game(
     has_high_score,
     settings
 ):
-
     height, width = stdscr.getmaxyx()
 
     if width < 30 or height < 12:
@@ -970,6 +871,7 @@ def play_game(
             "quit"
         )
 
+    # Enable mouse
     curses.mousemask(
         curses.ALL_MOUSE_EVENTS
         | curses.REPORT_MOUSE_POSITION
@@ -977,7 +879,17 @@ def play_game(
 
     curses.mouseinterval(0)
 
+    # ========================================================
+    # GAME VARIABLES
+    # ========================================================
+
     score = 0
+
+    # Timer starts when the game starts.
+    game_start_time = time.monotonic()
+
+    # Timestamp until the high-score notification stays visible.
+    new_high_score_until = 0
 
     snake = [
         [height // 2, width // 2 - 2],
@@ -989,6 +901,7 @@ def play_game(
 
     apples = []
 
+    # Create 10 apples.
     while len(apples) < 10:
 
         apple = [
@@ -1005,6 +918,7 @@ def play_game(
 
     mouse_dragging = False
 
+    # Initial draw
     redraw_game(
         stdscr,
         height,
@@ -1013,8 +927,14 @@ def play_game(
         high_score,
         snake,
         apples,
-        settings
+        settings,
+        0,
+        False
     )
+
+    # ========================================================
+    # GAME LOOP
+    # ========================================================
 
     while True:
 
@@ -1104,6 +1024,9 @@ def play_game(
 
         if key == 27:
 
+            # Save timer before pause.
+            pause_start = time.monotonic()
+
             result = pause_menu(
                 stdscr,
                 score,
@@ -1111,7 +1034,19 @@ def play_game(
                 settings
             )
 
+            # Keep the timer from counting paused time.
+            pause_duration = (
+                time.monotonic() - pause_start
+            )
+
+            game_start_time += pause_duration
+
             if result == "resume":
+
+                elapsed_time = (
+                    time.monotonic()
+                    - game_start_time
+                )
 
                 redraw_game(
                     stdscr,
@@ -1121,7 +1056,10 @@ def play_game(
                     high_score,
                     snake,
                     apples,
-                    settings
+                    settings,
+                    elapsed_time,
+                    time.monotonic()
+                    < new_high_score_until
                 )
 
                 continue
@@ -1172,22 +1110,34 @@ def play_game(
         # WASD
         # ====================================================
 
-        elif key in (ord("w"), ord("W")):
+        elif key in (
+            ord("w"),
+            ord("W")
+        ):
 
             if direction != curses.KEY_DOWN:
                 direction = curses.KEY_UP
 
-        elif key in (ord("s"), ord("S")):
+        elif key in (
+            ord("s"),
+            ord("S")
+        ):
 
             if direction != curses.KEY_UP:
                 direction = curses.KEY_DOWN
 
-        elif key in (ord("a"), ord("A")):
+        elif key in (
+            ord("a"),
+            ord("A")
+        ):
 
             if direction != curses.KEY_RIGHT:
                 direction = curses.KEY_LEFT
 
-        elif key in (ord("d"), ord("D")):
+        elif key in (
+            ord("d"),
+            ord("D")
+        ):
 
             if direction != curses.KEY_LEFT:
                 direction = curses.KEY_RIGHT
@@ -1254,8 +1204,7 @@ def play_game(
             score += 1
 
             # First score of the session.
-            # Set the high score without displaying
-            # the NEW HIGH SCORE screen.
+            # Establish the first high score silently.
             if not has_high_score:
 
                 high_score = score
@@ -1266,22 +1215,10 @@ def play_game(
 
                 high_score = score
 
-                new_high_score_screen(
-                    stdscr,
-                    score,
-                    settings
-                )
-
-                # FULL REDRAW AFTER HIGH SCORE SCREEN
-                redraw_game(
-                    stdscr,
-                    height,
-                    width,
-                    score,
-                    high_score,
-                    snake,
-                    apples,
-                    settings
+                # Show "NEW HIGH SCORE!" beside HUD
+                # for 1.5 seconds.
+                new_high_score_until = (
+                    time.monotonic() + 1.5
                 )
 
             apples.remove(head)
@@ -1364,38 +1301,31 @@ def play_game(
                 pass
 
         # ====================================================
-        # REDRAW
+        # REDRAW HUD + GAME
         # ====================================================
 
-        snake_color, apple_color, text_color = (
-            setup_colors(settings)
+        elapsed_time = (
+            time.monotonic()
+            - game_start_time
         )
 
-        try:
+        show_high_score = (
+            time.monotonic()
+            < new_high_score_until
+        )
 
-            stdscr.addstr(
-                0,
-                2,
-                f" Score: {score} | High Score: {high_score} ",
-                text_color | curses.A_BOLD
-            )
-
-        except curses.error:
-            pass
-
-        draw_snake(
+        redraw_game(
             stdscr,
+            height,
+            width,
+            score,
+            high_score,
             snake,
-            snake_color
-        )
-
-        draw_apples(
-            stdscr,
             apples,
-            apple_color
+            settings,
+            elapsed_time,
+            show_high_score
         )
-
-        stdscr.refresh()
 
 
 # ============================================================
@@ -1403,7 +1333,6 @@ def play_game(
 # ============================================================
 
 def main(stdscr):
-
     curses.curs_set(0)
 
     curses.mousemask(
@@ -1416,8 +1345,8 @@ def main(stdscr):
     # Session-only high score.
     high_score = 0
 
-    # Prevent first score from triggering
-    # the NEW HIGH SCORE screen.
+    # Prevent the first score from triggering
+    # the NEW HIGH SCORE notification.
     has_high_score = False
 
     # Default configuration.
