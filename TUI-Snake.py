@@ -20,7 +20,7 @@ COLOR_NAMES = [
 
 
 # ============================================================
-# FRUIT TYPES
+# FRUIT OPTIONS
 # ============================================================
 
 FRUIT_TYPES = [
@@ -96,15 +96,28 @@ def setup_colors(settings):
 
 
 def get_fruit_color(fruit, settings):
-    color = fruit["color"]
+    pair_number = 20 + fruit["color"]
 
     curses.init_pair(
-        20 + color,
-        color,
+        pair_number,
+        fruit["color"],
         settings["background"]
     )
 
-    return curses.color_pair(20 + color)
+    return curses.color_pair(pair_number)
+
+
+# ============================================================
+# TIMER
+# ============================================================
+
+def format_time(seconds):
+    seconds = int(seconds)
+
+    minutes = seconds // 60
+    seconds %= 60
+
+    return f"{minutes:02d}:{seconds:02d}"
 
 
 # ============================================================
@@ -113,14 +126,18 @@ def get_fruit_color(fruit, settings):
 
 def draw_grid(stdscr, height, width, text_color):
     for y in range(1, height - 1):
+
         for x in range(1, width - 2):
+
             try:
+
                 stdscr.addch(
                     y,
                     x,
                     ".",
                     text_color
                 )
+
             except curses.error:
                 pass
 
@@ -141,14 +158,18 @@ def draw_snake(stdscr, snake, snake_color):
             continue
 
         try:
+
             if i == 0:
+
                 stdscr.addstr(
                     y,
                     x,
                     "██",
                     snake_color | curses.A_BOLD
                 )
+
             else:
+
                 stdscr.addstr(
                     y,
                     x,
@@ -167,9 +188,11 @@ def draw_snake(stdscr, snake, snake_color):
 def draw_fruits(stdscr, fruits, settings):
     height, width = stdscr.getmaxyx()
 
-    for fruit_position, fruit in fruits:
+    for fruit_data in fruits:
 
-        y, x = fruit_position
+        position, fruit = fruit_data
+
+        y, x = position
 
         if not (
             0 < y < height - 1
@@ -183,6 +206,7 @@ def draw_fruits(stdscr, fruits, settings):
         )
 
         try:
+
             stdscr.addstr(
                 y,
                 x,
@@ -193,27 +217,51 @@ def draw_fruits(stdscr, fruits, settings):
         except curses.error:
 
             try:
+
                 stdscr.addch(
                     y,
                     x,
                     "O",
                     fruit_color | curses.A_BOLD
                 )
+
             except curses.error:
                 pass
 
 
 # ============================================================
-# TIMER
+# CREATE FRUIT
 # ============================================================
 
-def format_time(seconds):
-    seconds = int(seconds)
+def create_fruit(
+    snake,
+    fruits,
+    height,
+    width,
+    selected_fruit
+):
+    occupied_positions = [
+        fruit_data[0]
+        for fruit_data in fruits
+    ]
 
-    minutes = seconds // 60
-    seconds = seconds % 60
+    while True:
 
-    return f"{minutes:02d}:{seconds:02d}"
+        position = [
+            random.randint(1, height - 2),
+            random.randint(1, width - 3)
+        ]
+
+        if position in snake:
+            continue
+
+        if position in occupied_positions:
+            continue
+
+        return [
+            position,
+            selected_fruit
+        ]
 
 
 # ============================================================
@@ -232,11 +280,15 @@ def redraw_game(
     elapsed_time,
     show_high_score
 ):
-    snake_color, apple_color, text_color = (
+    snake_color, _, text_color = (
         setup_colors(settings)
     )
 
-    stdscr.bkgd(" ", text_color)
+    stdscr.bkgd(
+        " ",
+        text_color
+    )
+
     stdscr.erase()
 
     draw_grid(
@@ -247,6 +299,7 @@ def redraw_game(
     )
 
     try:
+
         stdscr.attron(text_color)
 
         stdscr.border()
@@ -264,7 +317,10 @@ def redraw_game(
         )
 
         if show_high_score:
-            score_text += "| NEW HIGH SCORE! "
+
+            score_text += (
+                "| NEW HIGH SCORE! "
+            )
 
         stdscr.addstr(
             0,
@@ -306,7 +362,11 @@ def main_menu(stdscr, settings):
 
     menu_color = curses.color_pair(10)
 
-    stdscr.bkgd(" ", menu_color)
+    stdscr.bkgd(
+        " ",
+        menu_color
+    )
+
     stdscr.erase()
 
     title = [
@@ -333,18 +393,21 @@ def main_menu(stdscr, settings):
         )
 
         try:
+
             stdscr.addstr(
                 y,
                 x,
                 line,
                 menu_color | curses.A_BOLD
             )
+
         except curses.error:
             pass
 
     subtitle = "Terminal Snake"
 
     try:
+
         stdscr.addstr(
             start_y + 7,
             max(
@@ -354,6 +417,7 @@ def main_menu(stdscr, settings):
             subtitle,
             menu_color
         )
+
     except curses.error:
         pass
 
@@ -373,12 +437,14 @@ def main_menu(stdscr, settings):
         )
 
         try:
+
             stdscr.addstr(
                 button_y + i,
                 x,
                 line,
                 menu_color | curses.A_BOLD
             )
+
         except curses.error:
             pass
 
@@ -387,6 +453,7 @@ def main_menu(stdscr, settings):
     )
 
     try:
+
         stdscr.addstr(
             button_y + 5,
             max(
@@ -396,6 +463,7 @@ def main_menu(stdscr, settings):
             controls,
             menu_color
         )
+
     except curses.error:
         pass
 
@@ -413,17 +481,20 @@ def main_menu(stdscr, settings):
             13,
             ord(" "),
         ):
+
             return "play"
 
         if key in (
             ord("q"),
             ord("Q"),
         ):
+
             return "quit"
 
         if key == curses.KEY_MOUSE:
 
             try:
+
                 _, mouse_x, mouse_y, _, mouse_state = (
                     curses.getmouse()
                 )
@@ -446,6 +517,7 @@ def main_menu(stdscr, settings):
                         <= mouse_x
                         <= button_x + button_width
                     ):
+
                         return "play"
 
             except curses.error:
@@ -461,7 +533,7 @@ def options_menu(stdscr, settings):
 
     options = [
         ("Snake Color", "snake"),
-        ("Apple Color", "apple"),
+        ("Fruit", "fruit"),
         ("Text / Grid Color", "text"),
         ("Background Color", "background"),
     ]
@@ -478,12 +550,17 @@ def options_menu(stdscr, settings):
 
         menu_color = curses.color_pair(10)
 
-        stdscr.bkgd(" ", menu_color)
+        stdscr.bkgd(
+            " ",
+            menu_color
+        )
+
         stdscr.erase()
 
         title = "OPTIONS"
 
         try:
+
             stdscr.addstr(
                 2,
                 max(
@@ -493,6 +570,7 @@ def options_menu(stdscr, settings):
                 title,
                 menu_color | curses.A_BOLD
             )
+
         except curses.error:
             pass
 
@@ -501,6 +579,7 @@ def options_menu(stdscr, settings):
         )
 
         try:
+
             stdscr.addstr(
                 4,
                 max(
@@ -510,6 +589,7 @@ def options_menu(stdscr, settings):
                 description,
                 menu_color
             )
+
         except curses.error:
             pass
 
@@ -517,18 +597,38 @@ def options_menu(stdscr, settings):
 
             y = 7 + i * 2
 
-            color_name = "Unknown"
+            # --------------------------------------------
+            # Determine displayed value
+            # --------------------------------------------
 
-            for name_value, color_id in COLOR_NAMES:
+            if setting_key == "fruit":
 
-                if color_id == settings[setting_key]:
-                    color_name = name_value
-                    break
+                fruit_index = settings["fruit"]
 
-            prefix = "> " if i == selected else "  "
+                value = FRUIT_TYPES[
+                    fruit_index
+                ]["name"]
+
+            else:
+
+                value = "Unknown"
+
+                for color_name, color_id in COLOR_NAMES:
+
+                    if color_id == settings[setting_key]:
+
+                        value = color_name
+
+                        break
+
+            prefix = (
+                "> "
+                if i == selected
+                else "  "
+            )
 
             line = (
-                f"{prefix}{name}: {color_name}"
+                f"{prefix}{name}: {value}"
             )
 
             try:
@@ -554,6 +654,7 @@ def options_menu(stdscr, settings):
         back = "ESC / B = Back"
 
         try:
+
             stdscr.addstr(
                 height - 2,
                 max(
@@ -563,6 +664,7 @@ def options_menu(stdscr, settings):
                 back,
                 menu_color
             )
+
         except curses.error:
             pass
 
@@ -571,6 +673,10 @@ def options_menu(stdscr, settings):
         stdscr.timeout(-1)
 
         key = stdscr.getch()
+
+        # ====================================================
+        # UP
+        # ====================================================
 
         if key in (
             curses.KEY_UP,
@@ -582,6 +688,10 @@ def options_menu(stdscr, settings):
                 selected - 1
             ) % len(options)
 
+        # ====================================================
+        # DOWN
+        # ====================================================
+
         elif key in (
             curses.KEY_DOWN,
             ord("s"),
@@ -592,6 +702,10 @@ def options_menu(stdscr, settings):
                 selected + 1
             ) % len(options)
 
+        # ====================================================
+        # LEFT
+        # ====================================================
+
         elif key in (
             curses.KEY_LEFT,
             ord("a"),
@@ -600,20 +714,36 @@ def options_menu(stdscr, settings):
 
             setting_key = options[selected][1]
 
-            colors = [
-                color_id
-                for _, color_id in COLOR_NAMES
-            ]
+            # Fruit selector
+            if setting_key == "fruit":
 
-            current = colors.index(
-                settings[setting_key]
-            )
+                settings["fruit"] = (
+                    settings["fruit"] - 1
+                ) % len(FRUIT_TYPES)
 
-            current = (
-                current - 1
-            ) % len(colors)
+            # Color selector
+            else:
 
-            settings[setting_key] = colors[current]
+                colors = [
+                    color_id
+                    for _, color_id in COLOR_NAMES
+                ]
+
+                current = colors.index(
+                    settings[setting_key]
+                )
+
+                current = (
+                    current - 1
+                ) % len(colors)
+
+                settings[setting_key] = (
+                    colors[current]
+                )
+
+        # ====================================================
+        # RIGHT
+        # ====================================================
 
         elif key in (
             curses.KEY_RIGHT,
@@ -623,20 +753,36 @@ def options_menu(stdscr, settings):
 
             setting_key = options[selected][1]
 
-            colors = [
-                color_id
-                for _, color_id in COLOR_NAMES
-            ]
+            # Fruit selector
+            if setting_key == "fruit":
 
-            current = colors.index(
-                settings[setting_key]
-            )
+                settings["fruit"] = (
+                    settings["fruit"] + 1
+                ) % len(FRUIT_TYPES)
 
-            current = (
-                current + 1
-            ) % len(colors)
+            # Color selector
+            else:
 
-            settings[setting_key] = colors[current]
+                colors = [
+                    color_id
+                    for _, color_id in COLOR_NAMES
+                ]
+
+                current = colors.index(
+                    settings[setting_key]
+                )
+
+                current = (
+                    current + 1
+                ) % len(colors)
+
+                settings[setting_key] = (
+                    colors[current]
+                )
+
+        # ====================================================
+        # BACK
+        # ====================================================
 
         elif key in (
             27,
@@ -678,7 +824,11 @@ def pause_menu(
 
         menu_color = curses.color_pair(10)
 
-        stdscr.bkgd(" ", menu_color)
+        stdscr.bkgd(
+            " ",
+            menu_color
+        )
+
         stdscr.erase()
 
         box_width = min(
@@ -706,7 +856,9 @@ def pause_menu(
             stdscr.addstr(
                 start_y,
                 start_x,
-                "╔" + "═" * (box_width - 2) + "╗",
+                "╔"
+                + "═" * (box_width - 2)
+                + "╗",
                 menu_color | curses.A_BOLD
             )
 
@@ -732,7 +884,9 @@ def pause_menu(
             stdscr.addstr(
                 start_y + box_height - 1,
                 start_x,
-                "╚" + "═" * (box_width - 2) + "╝",
+                "╚"
+                + "═" * (box_width - 2)
+                + "╝",
                 menu_color | curses.A_BOLD
             )
 
@@ -742,6 +896,7 @@ def pause_menu(
         title = "GAME PAUSED"
 
         try:
+
             stdscr.addstr(
                 start_y + 1,
                 start_x
@@ -749,6 +904,7 @@ def pause_menu(
                 title,
                 menu_color | curses.A_BOLD
             )
+
         except curses.error:
             pass
 
@@ -757,6 +913,7 @@ def pause_menu(
         )
 
         try:
+
             stdscr.addstr(
                 start_y + 3,
                 start_x
@@ -764,6 +921,7 @@ def pause_menu(
                 description,
                 menu_color
             )
+
         except curses.error:
             pass
 
@@ -772,6 +930,7 @@ def pause_menu(
         )
 
         try:
+
             stdscr.addstr(
                 start_y + 5,
                 start_x
@@ -779,6 +938,7 @@ def pause_menu(
                 score_text,
                 menu_color
             )
+
         except curses.error:
             pass
 
@@ -786,7 +946,11 @@ def pause_menu(
 
             y = start_y + 7 + i
 
-            prefix = "> " if i == selected else "  "
+            prefix = (
+                "> "
+                if i == selected
+                else "  "
+            )
 
             line = prefix + option
 
@@ -813,6 +977,7 @@ def pause_menu(
         )
 
         try:
+
             stdscr.addstr(
                 start_y + box_height - 2,
                 start_x
@@ -820,6 +985,7 @@ def pause_menu(
                 controls,
                 menu_color
             )
+
         except curses.error:
             pass
 
@@ -856,6 +1022,7 @@ def pause_menu(
         ):
 
             if selected == 0:
+
                 return "resume"
 
             elif selected == 1:
@@ -866,41 +1033,16 @@ def pause_menu(
                 )
 
             elif selected == 2:
+
                 return "restart"
 
             elif selected == 3:
+
                 return "quit"
 
         elif key == 27:
+
             return "resume"
-
-
-# ============================================================
-# CREATE RANDOM FRUIT
-# ============================================================
-
-def create_fruit(snake, fruits, height, width):
-    while True:
-
-        position = [
-            random.randint(1, height - 2),
-            random.randint(1, width - 3)
-        ]
-
-        if position in snake:
-            continue
-
-        occupied_positions = [
-            fruit_position
-            for fruit_position, fruit in fruits
-        ]
-
-        if position in occupied_positions:
-            continue
-
-        fruit = random.choice(FRUIT_TYPES)
-
-        return [position, fruit]
 
 
 # ============================================================
@@ -922,6 +1064,7 @@ def play_game(
         message = "Terminal too small."
 
         try:
+
             stdscr.addstr(
                 height // 2,
                 max(
@@ -966,26 +1109,31 @@ def play_game(
 
     direction = curses.KEY_RIGHT
 
+    # --------------------------------------------------------
+    # Selected fruit from Options
+    # --------------------------------------------------------
+
+    selected_fruit = FRUIT_TYPES[
+        settings["fruit"]
+    ]
+
     fruits = []
 
-    # ========================================================
-    # CREATE 10 FRUITS
-    # ========================================================
-
+    # Create 10 fruits of the selected type.
     while len(fruits) < 10:
 
-        fruit = create_fruit(
-            snake,
-            fruits,
-            height,
-            width
+        fruits.append(
+            create_fruit(
+                snake,
+                fruits,
+                height,
+                width,
+                selected_fruit
+            )
         )
-
-        fruits.append(fruit)
 
     mouse_dragging = False
 
-    # Initial draw
     redraw_game(
         stdscr,
         height,
@@ -1049,13 +1197,19 @@ def play_game(
                             dx > 0
                             and direction != curses.KEY_LEFT
                         ):
-                            direction = curses.KEY_RIGHT
+
+                            direction = (
+                                curses.KEY_RIGHT
+                            )
 
                         elif (
                             dx < 0
                             and direction != curses.KEY_RIGHT
                         ):
-                            direction = curses.KEY_LEFT
+
+                            direction = (
+                                curses.KEY_LEFT
+                            )
 
                     else:
 
@@ -1063,15 +1217,22 @@ def play_game(
                             dy > 0
                             and direction != curses.KEY_UP
                         ):
-                            direction = curses.KEY_DOWN
+
+                            direction = (
+                                curses.KEY_DOWN
+                            )
 
                         elif (
                             dy < 0
                             and direction != curses.KEY_DOWN
                         ):
-                            direction = curses.KEY_UP
+
+                            direction = (
+                                curses.KEY_UP
+                            )
 
                 if state & curses.BUTTON1_RELEASED:
+
                     mouse_dragging = False
 
             except curses.error:
@@ -1143,27 +1304,31 @@ def play_game(
                 )
 
         # ====================================================
-        # ARROW KEYS
+        # ARROWS
         # ====================================================
 
         if key == curses.KEY_UP:
 
             if direction != curses.KEY_DOWN:
+
                 direction = curses.KEY_UP
 
         elif key == curses.KEY_DOWN:
 
             if direction != curses.KEY_UP:
+
                 direction = curses.KEY_DOWN
 
         elif key == curses.KEY_LEFT:
 
             if direction != curses.KEY_RIGHT:
+
                 direction = curses.KEY_LEFT
 
         elif key == curses.KEY_RIGHT:
 
             if direction != curses.KEY_LEFT:
+
                 direction = curses.KEY_RIGHT
 
         # ====================================================
@@ -1176,6 +1341,7 @@ def play_game(
         ):
 
             if direction != curses.KEY_DOWN:
+
                 direction = curses.KEY_UP
 
         elif key in (
@@ -1184,6 +1350,7 @@ def play_game(
         ):
 
             if direction != curses.KEY_UP:
+
                 direction = curses.KEY_DOWN
 
         elif key in (
@@ -1192,6 +1359,7 @@ def play_game(
         ):
 
             if direction != curses.KEY_RIGHT:
+
                 direction = curses.KEY_LEFT
 
         elif key in (
@@ -1200,6 +1368,7 @@ def play_game(
         ):
 
             if direction != curses.KEY_LEFT:
+
                 direction = curses.KEY_RIGHT
 
         # ====================================================
@@ -1211,19 +1380,23 @@ def play_game(
         head = snake[0].copy()
 
         if direction == curses.KEY_UP:
+
             head[0] -= 1
 
         elif direction == curses.KEY_DOWN:
+
             head[0] += 1
 
         elif direction == curses.KEY_LEFT:
+
             head[1] -= 1
 
         elif direction == curses.KEY_RIGHT:
+
             head[1] += 1
 
         # ====================================================
-        # WALL COLLISION
+        # WALL
         # ====================================================
 
         if (
@@ -1253,7 +1426,10 @@ def play_game(
                 "dead"
             )
 
-        snake.insert(0, head)
+        snake.insert(
+            0,
+            head
+        )
 
         # ====================================================
         # FRUIT COLLISION
@@ -1261,28 +1437,31 @@ def play_game(
 
         eaten_fruit = None
 
-        for fruit_position, fruit in fruits:
+        for fruit_data in fruits:
+
+            fruit_position, fruit = fruit_data
 
             if head == fruit_position:
 
-                eaten_fruit = (
-                    fruit_position,
-                    fruit
-                )
+                # Store the exact list object.
+                eaten_fruit = fruit_data
 
                 break
 
         if eaten_fruit is not None:
 
-            fruit_position, fruit = eaten_fruit
+            fruit_position, fruit = (
+                eaten_fruit
+            )
 
-            # Add fruit's point value.
+            # Add selected fruit's points.
             score += fruit["points"]
 
-            # First score of the session.
+            # First score.
             if not has_high_score:
 
                 high_score = score
+
                 has_high_score = True
 
             # New high score.
@@ -1291,18 +1470,23 @@ def play_game(
                 high_score = score
 
                 new_high_score_until = (
-                    time.monotonic() + 1.5
+                    time.monotonic()
+                    + 1.5
                 )
 
-            fruits.remove(eaten_fruit)
+            # Remove exact fruit object.
+            fruits.remove(
+                eaten_fruit
+            )
 
-            # Spawn another fruit.
+            # Spawn another selected fruit.
             fruits.append(
                 create_fruit(
                     snake,
                     fruits,
                     height,
-                    width
+                    width,
+                    selected_fruit
                 )
             )
 
@@ -1320,12 +1504,14 @@ def play_game(
                 for y, x in snake:
 
                     try:
+
                         stdscr.addstr(
                             y,
                             x,
                             "  ",
                             text_color
                         )
+
                     except curses.error:
                         pass
 
@@ -1348,12 +1534,14 @@ def play_game(
             )
 
             try:
+
                 stdscr.addstr(
                     old_tail[0],
                     old_tail[1],
                     "..",
                     text_color
                 )
+
             except curses.error:
                 pass
 
@@ -1399,17 +1587,28 @@ def main(stdscr):
 
     curses.mouseinterval(0)
 
-    # Session-only high score.
+    # Session high score.
     high_score = 0
 
     has_high_score = False
 
-    # Default configuration.
+    # ========================================================
+    # DEFAULT SETTINGS
+    # ========================================================
+
     settings = {
         "snake": curses.COLOR_BLUE,
         "apple": curses.COLOR_RED,
         "text": curses.COLOR_BLACK,
         "background": curses.COLOR_GREEN,
+
+        # 0 = Apple
+        # 1 = Orange
+        # 2 = Lemon
+        # 3 = Grape
+        # 4 = Strawberry
+        # 5 = Cherry
+        "fruit": 0,
     }
 
     # ========================================================
@@ -1424,6 +1623,7 @@ def main(stdscr):
         )
 
         if result == "quit":
+
             return
 
         # ====================================================
@@ -1445,9 +1645,11 @@ def main(stdscr):
             )
 
             if result == "restart":
+
                 continue
 
             if result == "quit":
+
                 return
 
             # =================================================
@@ -1462,7 +1664,9 @@ def main(stdscr):
                 settings["background"]
             )
 
-            game_over_color = curses.color_pair(10)
+            game_over_color = (
+                curses.color_pair(10)
+            )
 
             stdscr.bkgd(
                 " ",
