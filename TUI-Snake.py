@@ -20,6 +20,50 @@ COLOR_NAMES = [
 
 
 # ============================================================
+# FRUIT TYPES
+# ============================================================
+
+FRUIT_TYPES = [
+    {
+        "name": "Apple",
+        "symbol": "●",
+        "color": curses.COLOR_RED,
+        "points": 1,
+    },
+    {
+        "name": "Orange",
+        "symbol": "●",
+        "color": curses.COLOR_YELLOW,
+        "points": 2,
+    },
+    {
+        "name": "Lemon",
+        "symbol": "●",
+        "color": curses.COLOR_YELLOW,
+        "points": 3,
+    },
+    {
+        "name": "Grape",
+        "symbol": "●",
+        "color": curses.COLOR_MAGENTA,
+        "points": 4,
+    },
+    {
+        "name": "Strawberry",
+        "symbol": "●",
+        "color": curses.COLOR_RED,
+        "points": 5,
+    },
+    {
+        "name": "Cherry",
+        "symbol": "●",
+        "color": curses.COLOR_RED,
+        "points": 6,
+    },
+]
+
+
+# ============================================================
 # COLORS
 # ============================================================
 
@@ -49,6 +93,18 @@ def setup_colors(settings):
         curses.color_pair(2),
         curses.color_pair(3)
     )
+
+
+def get_fruit_color(fruit, settings):
+    color = fruit["color"]
+
+    curses.init_pair(
+        20 + color,
+        color,
+        settings["background"]
+    )
+
+    return curses.color_pair(20 + color)
 
 
 # ============================================================
@@ -105,42 +161,50 @@ def draw_snake(stdscr, snake, snake_color):
 
 
 # ============================================================
-# APPLES
+# FRUITS
 # ============================================================
 
-def draw_apples(stdscr, apples, apple_color):
+def draw_fruits(stdscr, fruits, settings):
     height, width = stdscr.getmaxyx()
 
-    for y, x in apples:
+    for fruit_position, fruit in fruits:
 
-        if (
+        y, x = fruit_position
+
+        if not (
             0 < y < height - 1
             and 0 < x < width - 2
         ):
+            continue
+
+        fruit_color = get_fruit_color(
+            fruit,
+            settings
+        )
+
+        try:
+            stdscr.addstr(
+                y,
+                x,
+                fruit["symbol"],
+                fruit_color | curses.A_BOLD
+            )
+
+        except curses.error:
 
             try:
-                stdscr.addstr(
+                stdscr.addch(
                     y,
                     x,
-                    "●",
-                    apple_color | curses.A_BOLD
+                    "O",
+                    fruit_color | curses.A_BOLD
                 )
-
             except curses.error:
-
-                try:
-                    stdscr.addch(
-                        y,
-                        x,
-                        "O",
-                        apple_color | curses.A_BOLD
-                    )
-                except curses.error:
-                    pass
+                pass
 
 
 # ============================================================
-# FORMAT TIMER
+# TIMER
 # ============================================================
 
 def format_time(seconds):
@@ -163,7 +227,7 @@ def redraw_game(
     score,
     high_score,
     snake,
-    apples,
+    fruits,
     settings,
     elapsed_time,
     show_high_score
@@ -189,7 +253,9 @@ def redraw_game(
 
         stdscr.attroff(text_color)
 
-        timer_text = format_time(elapsed_time)
+        timer_text = format_time(
+            elapsed_time
+        )
 
         score_text = (
             f" Score: {score} | "
@@ -210,10 +276,10 @@ def redraw_game(
     except curses.error:
         pass
 
-    draw_apples(
+    draw_fruits(
         stdscr,
-        apples,
-        apple_color
+        fruits,
+        settings
     )
 
     draw_snake(
@@ -257,7 +323,6 @@ def main_menu(stdscr, settings):
         height // 2 - 9
     )
 
-    # Title
     for i, line in enumerate(title):
 
         y = start_y + i
@@ -277,7 +342,6 @@ def main_menu(stdscr, settings):
         except curses.error:
             pass
 
-    # Subtitle
     subtitle = "Terminal Snake"
 
     try:
@@ -293,7 +357,6 @@ def main_menu(stdscr, settings):
     except curses.error:
         pass
 
-    # Play button
     button = [
         "╔══════════════════════════╗",
         "║          PLAY            ║",
@@ -319,7 +382,6 @@ def main_menu(stdscr, settings):
         except curses.error:
             pass
 
-    # Controls
     controls = (
         "ENTER / Left Click to Play    Q to Quit"
     )
@@ -639,7 +701,6 @@ def pause_menu(
             (width - box_width) // 2
         )
 
-        # Top
         try:
 
             stdscr.addstr(
@@ -649,7 +710,6 @@ def pause_menu(
                 menu_color | curses.A_BOLD
             )
 
-            # Sides
             for y in range(
                 start_y + 1,
                 start_y + box_height - 1
@@ -669,7 +729,6 @@ def pause_menu(
                     menu_color
                 )
 
-            # Bottom
             stdscr.addstr(
                 start_y + box_height - 1,
                 start_x,
@@ -683,7 +742,6 @@ def pause_menu(
         title = "GAME PAUSED"
 
         try:
-
             stdscr.addstr(
                 start_y + 1,
                 start_x
@@ -691,7 +749,6 @@ def pause_menu(
                 title,
                 menu_color | curses.A_BOLD
             )
-
         except curses.error:
             pass
 
@@ -700,7 +757,6 @@ def pause_menu(
         )
 
         try:
-
             stdscr.addstr(
                 start_y + 3,
                 start_x
@@ -708,7 +764,6 @@ def pause_menu(
                 description,
                 menu_color
             )
-
         except curses.error:
             pass
 
@@ -717,7 +772,6 @@ def pause_menu(
         )
 
         try:
-
             stdscr.addstr(
                 start_y + 5,
                 start_x
@@ -725,7 +779,6 @@ def pause_menu(
                 score_text,
                 menu_color
             )
-
         except curses.error:
             pass
 
@@ -760,7 +813,6 @@ def pause_menu(
         )
 
         try:
-
             stdscr.addstr(
                 start_y + box_height - 2,
                 start_x
@@ -768,7 +820,6 @@ def pause_menu(
                 controls,
                 menu_color
             )
-
         except curses.error:
             pass
 
@@ -805,7 +856,6 @@ def pause_menu(
         ):
 
             if selected == 0:
-
                 return "resume"
 
             elif selected == 1:
@@ -816,16 +866,41 @@ def pause_menu(
                 )
 
             elif selected == 2:
-
                 return "restart"
 
             elif selected == 3:
-
                 return "quit"
 
         elif key == 27:
-
             return "resume"
+
+
+# ============================================================
+# CREATE RANDOM FRUIT
+# ============================================================
+
+def create_fruit(snake, fruits, height, width):
+    while True:
+
+        position = [
+            random.randint(1, height - 2),
+            random.randint(1, width - 3)
+        ]
+
+        if position in snake:
+            continue
+
+        occupied_positions = [
+            fruit_position
+            for fruit_position, fruit in fruits
+        ]
+
+        if position in occupied_positions:
+            continue
+
+        fruit = random.choice(FRUIT_TYPES)
+
+        return [position, fruit]
 
 
 # ============================================================
@@ -847,7 +922,6 @@ def play_game(
         message = "Terminal too small."
 
         try:
-
             stdscr.addstr(
                 height // 2,
                 max(
@@ -871,7 +945,6 @@ def play_game(
             "quit"
         )
 
-    # Enable mouse
     curses.mousemask(
         curses.ALL_MOUSE_EVENTS
         | curses.REPORT_MOUSE_POSITION
@@ -879,16 +952,10 @@ def play_game(
 
     curses.mouseinterval(0)
 
-    # ========================================================
-    # GAME VARIABLES
-    # ========================================================
-
     score = 0
 
-    # Timer starts when the game starts.
     game_start_time = time.monotonic()
 
-    # Timestamp until the high-score notification stays visible.
     new_high_score_until = 0
 
     snake = [
@@ -899,22 +966,22 @@ def play_game(
 
     direction = curses.KEY_RIGHT
 
-    apples = []
+    fruits = []
 
-    # Create 10 apples.
-    while len(apples) < 10:
+    # ========================================================
+    # CREATE 10 FRUITS
+    # ========================================================
 
-        apple = [
-            random.randint(1, height - 2),
-            random.randint(1, width - 3)
-        ]
+    while len(fruits) < 10:
 
-        if (
-            apple not in snake
-            and apple not in apples
-        ):
+        fruit = create_fruit(
+            snake,
+            fruits,
+            height,
+            width
+        )
 
-            apples.append(apple)
+        fruits.append(fruit)
 
     mouse_dragging = False
 
@@ -926,7 +993,7 @@ def play_game(
         score,
         high_score,
         snake,
-        apples,
+        fruits,
         settings,
         0,
         False
@@ -938,7 +1005,6 @@ def play_game(
 
     while True:
 
-        # Faster as score increases.
         speed = max(
             30,
             85 - score * 3
@@ -949,7 +1015,7 @@ def play_game(
         key = stdscr.getch()
 
         # ====================================================
-        # MOUSE DRAGGING
+        # MOUSE
         # ====================================================
 
         if key == curses.KEY_MOUSE:
@@ -983,14 +1049,12 @@ def play_game(
                             dx > 0
                             and direction != curses.KEY_LEFT
                         ):
-
                             direction = curses.KEY_RIGHT
 
                         elif (
                             dx < 0
                             and direction != curses.KEY_RIGHT
                         ):
-
                             direction = curses.KEY_LEFT
 
                     else:
@@ -999,18 +1063,15 @@ def play_game(
                             dy > 0
                             and direction != curses.KEY_UP
                         ):
-
                             direction = curses.KEY_DOWN
 
                         elif (
                             dy < 0
                             and direction != curses.KEY_DOWN
                         ):
-
                             direction = curses.KEY_UP
 
                 if state & curses.BUTTON1_RELEASED:
-
                     mouse_dragging = False
 
             except curses.error:
@@ -1024,7 +1085,6 @@ def play_game(
 
         if key == 27:
 
-            # Save timer before pause.
             pause_start = time.monotonic()
 
             result = pause_menu(
@@ -1034,9 +1094,9 @@ def play_game(
                 settings
             )
 
-            # Keep the timer from counting paused time.
             pause_duration = (
-                time.monotonic() - pause_start
+                time.monotonic()
+                - pause_start
             )
 
             game_start_time += pause_duration
@@ -1055,7 +1115,7 @@ def play_game(
                     score,
                     high_score,
                     snake,
-                    apples,
+                    fruits,
                     settings,
                     elapsed_time,
                     time.monotonic()
@@ -1196,59 +1256,60 @@ def play_game(
         snake.insert(0, head)
 
         # ====================================================
-        # APPLE
+        # FRUIT COLLISION
         # ====================================================
 
-        if head in apples:
+        eaten_fruit = None
 
-            score += 1
+        for fruit_position, fruit in fruits:
+
+            if head == fruit_position:
+
+                eaten_fruit = (
+                    fruit_position,
+                    fruit
+                )
+
+                break
+
+        if eaten_fruit is not None:
+
+            fruit_position, fruit = eaten_fruit
+
+            # Add fruit's point value.
+            score += fruit["points"]
 
             # First score of the session.
-            # Establish the first high score silently.
             if not has_high_score:
 
                 high_score = score
                 has_high_score = True
 
-            # Existing high score beaten.
+            # New high score.
             elif score > high_score:
 
                 high_score = score
 
-                # Show "NEW HIGH SCORE!" beside HUD
-                # for 1.5 seconds.
                 new_high_score_until = (
                     time.monotonic() + 1.5
                 )
 
-            apples.remove(head)
+            fruits.remove(eaten_fruit)
 
-            # Spawn another apple.
-            while True:
+            # Spawn another fruit.
+            fruits.append(
+                create_fruit(
+                    snake,
+                    fruits,
+                    height,
+                    width
+                )
+            )
 
-                new_apple = [
-                    random.randint(
-                        1,
-                        height - 2
-                    ),
-                    random.randint(
-                        1,
-                        width - 3
-                    )
-                ]
-
-                if (
-                    new_apple not in snake
-                    and new_apple not in apples
-                ):
-
-                    apples.append(new_apple)
-                    break
-
-            # Snake growth blink.
+            # Growth blink.
             for _ in range(3):
 
-                snake_color, apple_color, text_color = (
+                snake_color, _, text_color = (
                     setup_colors(settings)
                 )
 
@@ -1259,14 +1320,12 @@ def play_game(
                 for y, x in snake:
 
                     try:
-
                         stdscr.addstr(
                             y,
                             x,
                             "  ",
                             text_color
                         )
-
                     except curses.error:
                         pass
 
@@ -1284,24 +1343,22 @@ def play_game(
 
             snake.pop()
 
-            snake_color, apple_color, text_color = (
+            _, _, text_color = (
                 setup_colors(settings)
             )
 
             try:
-
                 stdscr.addstr(
                     old_tail[0],
                     old_tail[1],
                     "..",
                     text_color
                 )
-
             except curses.error:
                 pass
 
         # ====================================================
-        # REDRAW HUD + GAME
+        # REDRAW
         # ====================================================
 
         elapsed_time = (
@@ -1321,7 +1378,7 @@ def play_game(
             score,
             high_score,
             snake,
-            apples,
+            fruits,
             settings,
             elapsed_time,
             show_high_score
@@ -1345,8 +1402,6 @@ def main(stdscr):
     # Session-only high score.
     high_score = 0
 
-    # Prevent the first score from triggering
-    # the NEW HIGH SCORE notification.
     has_high_score = False
 
     # Default configuration.
