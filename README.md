@@ -61,6 +61,21 @@ py TUI-Snake.py
 
 Make sure your terminal window is large enough for the game board.
 
+## Updates
+
+### Latest Update
+
+* Added **multiple fruit types**: Apple, Orange, Lemon, Grape, Strawberry, and Cherry
+* Added a **Fruit selector** to the Options menu
+* Use **LEFT / RIGHT** in Options to change the selected fruit
+* Each fruit has its own **point value**
+* Added a **session timer** to track how long you've been playing
+* Added a brief **NEW HIGH SCORE!** notification next to the score display
+* Fixed fruit collection handling to prevent errors when removing collected fruit
+* Improved the pause and options menus
+* Added mouse support for menu interaction and movement
+
+
 ## Controls
 
 | Key               | Action                  |
